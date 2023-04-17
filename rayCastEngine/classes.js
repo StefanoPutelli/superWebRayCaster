@@ -232,7 +232,15 @@ export class Player extends Entity {
                         let dX = parseInt(this.position.x + (x_distance * cosAngle + this.tile_size / 2 * cosSign));
                         let dY = parseInt(this.position.y - (x_distance * sinAngle));
                         dptX += 1;
-                        if (this.map2D.map2D[dY][dX].value === '#' || dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width) {
+                        if(dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width){
+                            fov_array.push({
+                                distance: Math.abs(x_distance * fish_eye_correction),
+                                block_id: null,
+                                block_face: null
+                            });
+                            break;
+                        }
+                        if (this.map2D.map2D[dY][dX].value === '#' ) {
                             fov_array.push({
                                 distance: Math.abs(x_distance * fish_eye_correction),
                                 block_id: this.map2D.map2D[dY][dX].id,
@@ -245,7 +253,15 @@ export class Player extends Entity {
                         let dX = parseInt(this.position.x + (y_distance * cosAngle));
                         let dY = parseInt(this.position.y - (y_distance * sinAngle + this.tile_size / 2 * sinSign));
                         dptY += 1;
-                        if (this.map2D.map2D[dY][dX].value === '#' || dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width) {
+                        if(dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width){
+                            fov_array.push({
+                                distance: Math.abs(y_distance * fish_eye_correction),
+                                block_id: null,
+                                block_face: null
+                            });
+                            break;
+                        }
+                        if (this.map2D.map2D[dY][dX].value === '#') {
                             fov_array.push({
                                 distance: Math.abs(y_distance * fish_eye_correction),
                                 block_id: this.map2D.map2D[dY][dX].id,
@@ -261,4 +277,70 @@ export class Player extends Entity {
         }
         return fov_array;
     }
+}
+
+export class Screen {
+    dimension = {
+        height: 0,
+        width: 0,
+        margin: 0
+    };
+    margin = 0;
+    constructor(conf) {
+        this.dimension.height = conf.dimensions.height;
+        this.dimension.width = parseInt(conf.dimensions.width/conf.FOV)*conf.FOV;
+        this.margin = parseInt((conf.dimensions.width - this.dimension.width)/2);
+    }
+
+    setDimensions(width, height, fov) {
+        this.dimension.height = height;
+        this.dimension.width = parseInt(width/fov)*fov;
+        this.margin = parseInt((width - this.dimension.width)/2);
+    }
+
+    drawScreen(ctx,canvas, fov_array) {
+        let screenCenter = this.dimension.height / 2;
+        // ctx.clearRect(0, 0, canvas.width, canvas.height); //metodo per cancellare il canvas
+        canvas.width = canvas.width; //metodo per cancellare il canvas strano, ma funziona, forse più veloce
+        for(let i = fov_array.length - 1; i >= 0; i--) {
+            let halfHeight = screenCenter / fov_array[i].distance;
+            let start = screenCenter - halfHeight;
+            let end = screenCenter + halfHeight;
+            ctx.strokeStyle = "rgba(0, 0, 255, " + 1/fov_array[i].distance + ")";
+            ctx.beginPath();
+            ctx.moveTo(i + this.margin, start);
+            ctx.lineTo(i + this.margin, end);
+            ctx.stroke();
+        }
+
+    }
+
+
+    //TODO: fare meglio la minimappa
+    drawMap(ctx, map2D, playerX, playerY) {
+        let mapWidth = map2D[0].length;
+        let mapHeight = map2D.length;
+        let mapScale = this.dimension.width * 0.5 / mapWidth;
+        ctx.fillStyle = "rgba(0,0,0,0)";
+        ctx.fillRect(0, 0, mapWidth * mapScale, mapHeight * mapScale);
+        for(let i = 0; i < mapHeight; i++) {
+            for(let j = 0; j < mapWidth; j++) {
+                if(map2D[i][j].value === '#') {
+                    ctx.fillStyle = "rgba(255, 0, 0, 1)";
+                    ctx.fillRect(j * mapScale, i * mapScale, mapScale, mapScale);
+                } else if(map2D[i][j].value === 'X') {
+                    ctx.fillStyle = "rgba(0, 0, 255, 1)";
+                    ctx.fillRect(j * mapScale, i * mapScale, mapScale, mapScale);
+                } else if(map2D[i][j].value === 'Y') {
+                    ctx.fillStyle = "rgba(0, 255, 255, 1)";
+                    ctx.fillRect(j * mapScale, i * mapScale, mapScale, mapScale);
+                }
+            }
+        }
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(0, 255, 0, 1)";
+        ctx.arc(playerX*mapScale, playerY*mapScale, mapScale/2, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
 }
