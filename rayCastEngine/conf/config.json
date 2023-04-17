@@ -1,0 +1,11 @@
+{
+    "FOV": 60,
+    "initial_direction": 0,
+    "dimensions": {
+        "width": 660,
+        "height": 600
+    },
+    "tile_size": 1,
+    "max_fps": 30,
+    "player_speed": 0.05
+}
