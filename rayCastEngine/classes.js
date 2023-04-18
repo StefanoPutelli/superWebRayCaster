@@ -35,6 +35,7 @@ export class Map2D {
                 maxColLenght = i;
             }
         })
+        maxColLenght += 1;
         return { maxRowLenght, maxColLenght };
     }
     printMap() {
@@ -200,9 +201,9 @@ export class Player extends Entity {
         let start = parseInt(this.direction - (this.FOV / 2));
         let end = parseInt(this.direction + (this.FOV / 2));
         let fov_array = []
-        for (let i = start; i < end; i++) {
+        for (let i = end - 1; i >= start; i--) {
             for (let r = 0; r < this.RESOLUTION; r++) {
-                let pre_angle = i % 360 + r / this.RESOLUTION;
+                let pre_angle = i % 360 - r / this.RESOLUTION;
                 let angle = pre_angle < 0 ? pre_angle + 360 : pre_angle;
                 let dirVal = this.getDirVars(angle, this.position.x, this.position.y);
                 let angle_rad = (angle * M_PI / 180);
@@ -214,7 +215,7 @@ export class Player extends Entity {
                 let dptY = 0;
                 let x_distance = 0;
                 let y_distance = 0;
-
+                
                 while (true) {
                     if (angle === 0 || angle === 180) {
                         y_distance = INT_MAX;
@@ -226,13 +227,13 @@ export class Player extends Entity {
                     } else {
                         x_distance = ((dirVal.x + (dptX * this.tile_size)) / Math.abs(cosAngle));
                     }
-                    let fov_index = (i - start) * this.RESOLUTION + r;
+                    let fov_index = (i - start) * this.RESOLUTION - r;
                     let fish_eye_correction = Math.cos((fov_index / this.RESOLUTION - this.FOV / 2) * M_PI / 180);
                     if (x_distance < y_distance) {
                         let dX = parseInt(this.position.x + (x_distance * cosAngle + this.tile_size / 2 * cosSign));
                         let dY = parseInt(this.position.y - (x_distance * sinAngle));
                         dptX += 1;
-                        if(dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width){
+                        if(dY < 0 || dY > this.map_height || dX < 0 || dX > this.map_width){
                             fov_array.push({
                                 distance: Math.abs(x_distance * fish_eye_correction),
                                 block_id: null,
@@ -279,49 +280,35 @@ export class Player extends Entity {
     }
 }
 
-export class Screen {
-    dimension = {
-        height: 0,
-        width: 0,
-        margin: 0
-    };
-    margin = 0;
-    constructor(conf) {
-        this.dimension.height = conf.dimensions.height;
-        this.dimension.width = parseInt(conf.dimensions.width/conf.FOV)*conf.FOV;
-        this.margin = parseInt((conf.dimensions.width - this.dimension.width)/2);
-    }
-
-    setDimensions(width, height, fov) {
-        this.dimension.height = height;
-        this.dimension.width = parseInt(width/fov)*fov;
-        this.margin = parseInt((width - this.dimension.width)/2);
-    }
-
-    drawScreen(ctx,canvas, fov_array) {
-        let screenCenter = this.dimension.height / 2;
-        // ctx.clearRect(0, 0, canvas.width, canvas.height); //metodo per cancellare il canvas
+export class ScreenRenderer{
+    drawScreen(ctx,canvas,fov_array,fov) {
+        const screenCenter = canvas.height / 2;
         canvas.width = canvas.width; //metodo per cancellare il canvas strano, ma funziona, forse più veloce
-        for(let i = fov_array.length - 1; i >= 0; i--) {
-            let halfHeight = screenCenter / fov_array[i].distance;
-            let start = screenCenter - halfHeight;
-            let end = screenCenter + halfHeight;
-            ctx.strokeStyle = "rgba(0, " + fov_array[i].block_id % 2 ? 100 : 200   + ", 255, " + 1/fov_array[i].distance + ")";
-            ctx.beginPath();
-            let x = fov_array.length - i + this.margin;
-            ctx.moveTo(x, start);
-            ctx.lineTo(x, end);
-            ctx.stroke();
+        const margin = (canvas.width - parseInt(canvas.width/fov)*fov)/2
+        let current_block = fov_array[0].block_id;
+        let currentFace = fov_array[0].block_face;
+        let current_block_start = 0;
+        for(let i = 0; i < fov_array.length-1; i++) {
+            if(fov_array[i+1].block_id !== current_block || fov_array[i+1].block_face !== currentFace || i+1 === fov_array.length-1) {
+                ctx.beginPath();
+                ctx.moveTo(current_block_start + margin, screenCenter + screenCenter / fov_array[current_block_start].distance);
+                ctx.lineTo(i + margin, screenCenter + screenCenter / fov_array[i].distance);
+                ctx.lineTo(i + margin, screenCenter - screenCenter / fov_array[i].distance);
+                ctx.lineTo(current_block_start + margin, screenCenter - screenCenter / fov_array[current_block_start].distance);
+                ctx.closePath();
+                ctx.fillStyle = "rgba(0, " + i % 255 + ", 255, " + 1/(fov_array[i].distance/2)+ ")";
+                ctx.fill();
+                current_block_start = i+1;
+                current_block = fov_array[i+1].block_id;
+                currentFace = fov_array[i+1].block_face;
+            }
         }
 
     }
-
-
-    //TODO: fare meglio la minimappa
-    drawMap(ctx, map2D, playerX, playerY) {
+    drawMap(ctx,canvas, map2D, playerX, playerY) {
         let mapWidth = map2D[0].length;
         let mapHeight = map2D.length;
-        let mapScale = this.dimension.width * 0.4 / mapWidth;
+        let mapScale = canvas.height * 0.3 / mapWidth;
         ctx.fillStyle = "rgba(0,0,0,0)";
         ctx.fillRect(0, 0, mapWidth * mapScale, mapHeight * mapScale);
         for(let i = 0; i < mapHeight; i++) {
@@ -343,5 +330,4 @@ export class Screen {
         ctx.arc(playerX*mapScale, playerY*mapScale, mapScale/2, 0, 2 * Math.PI);
         ctx.fill();
     }
-
 }
