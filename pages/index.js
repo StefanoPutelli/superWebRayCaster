@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { Player, Map2D, ScreenRenderer } from '../rayCastEngine/classes.js';
 import { useEffect, useRef } from 'react';
+import JoyStick from "./comp/joystick"
 
 const configs = {
   FOV: 60,
@@ -52,7 +53,7 @@ export default function Home() {
   const keyPressed = useRef({})
   const mouseTurned = useRef(0);
 
-  const lastTime = useRef(0);
+  const drag_lenght = useRef(0);
 
   function checkTurn(){
     player.turn(mouseTurned.current);
@@ -84,7 +85,7 @@ export default function Home() {
       window.addEventListener("load", handler);
       return () => document.removeEventListener("load", handler);
     }
-  }, []);
+  });
 
   useEffect(() => {
     window.addEventListener('resize', () => {
@@ -94,7 +95,6 @@ export default function Home() {
   })
 
   useEffect(() => {
-    console.log("movement activated")
     const handleMouseMove = (e) => {
       if(!ctx.current || !canv.current) return;
       mouseTurned.current += e.movementX * -0.1;
@@ -107,13 +107,29 @@ export default function Home() {
       if(!ctx.current || !canv.current) return;
       delete keyPressed.current[e.key];
     }
+    const handleScroll = (e) => {
+      e.preventDefault();
+    }
+    const touchStart = (e) => {
+      drag_lenght.current = e.touches[0].clientX;
+    }
+    const touchMove = (e) => {
+      mouseTurned.current += (e.touches[0].clientX - drag_lenght.current) * 0.1;
+      drag_lenght.current = e.touches[0].clientX;
+    }
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('touchstart', touchStart);
+    window.addEventListener('touchmove', touchMove);
     return () => {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', touchStart);
+      window.removeEventListener('touchmove', touchMove);
     }
   });
 
@@ -128,18 +144,27 @@ export default function Home() {
     }, 1000/50);
   })
 
+
   return (
     <>
       <Head>
         <title>Create Next App</title>
         <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width; initial-scale=1; maximum-scale=1; user-scalable=0;"/>
+
       </Head>
-      <canvas id="canvas" style={{height: "100vh",width: "100vw", position: "absolute", top: "0", left: "0"}}></canvas>
+      <canvas id="canvas" style={{height: "100svh",width: "100vw", position: "absolute", top: "0", left: "0", zIndex:"-1"}}></canvas>
+      <JoyStick key_pressed={keyPressed}/>
       <div style={{position: "absolute", right: "0", top: "0", color:"black"}}>
         <p>WASD to move</p>
         <p>Mouse to turn</p>
         <p>Click to lock mouse</p>
       </div>
+      <style jsx global>{`
+        body {
+          overscroll-behavior: contain;
+        }
+      `}</style>
     </>
   )
 }

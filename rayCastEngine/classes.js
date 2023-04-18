@@ -296,8 +296,15 @@ export class ScreenRenderer{
                 ctx.lineTo(i + margin, screenCenter - screenCenter / fov_array[i].distance);
                 ctx.lineTo(current_block_start + margin, screenCenter - screenCenter / fov_array[current_block_start].distance);
                 ctx.closePath();
-                ctx.fillStyle = "rgba(0, " + i % 255 + ", 255, " + 1/(fov_array[i].distance/2)+ ")";
+                ctx.fillStyle = current_block === null ? "rgba(0,0,0,0)" : current_block.color;
                 ctx.fill();
+                // ctx.clip();
+                // var img=new Image();
+                // img.src="https://www.imgonline.com.ua/examples/rays-of-light-in-the-sky.jpg";
+                // img.onload=function(){
+                //     ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                // }
+                // ctx.restore();
                 current_block_start = i+1;
                 current_block = fov_array[i+1].block_id;
                 currentFace = fov_array[i+1].block_face;
