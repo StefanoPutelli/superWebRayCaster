@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import styles from '../styles/Home.module.css';
 import { Player, Map2D, Screen } from '../rayCastEngine/classes.js';
 import { useEffect, useRef } from 'react';
 
@@ -53,17 +52,28 @@ export default function Home() {
   const keyPressed = useRef({})
   const mouseTurned = useRef(0);
 
+  function checkTurn(){
+    player.turn(mouseTurned.current);
+    mouseTurned.current = 0;
+  }
+
+  function setSize(height, width){
+    canv.current.width = width;
+    canv.current.height = height;
+    ctx.current.imageSmoothingEnabled = false;
+    player.setDimensions(canv.current.width, canv.current.height);
+    screen.setDimensions(canv.current.width, canv.current.height);
+  }
+
   useEffect(() => {
 
     function handler(){
       canv.current = document.getElementById('canvas');
       ctx.current = canv.current.getContext('2d');
-      alert("loaded")
+      setSize(window.innerHeight, window.innerWidth);
     }
     if (document.readyState === "complete") {
-      canv.current = document.getElementById('canvas');
-      ctx.current = canv.current.getContext('2d');
-      alert("loaded")
+      handler();
     } else {
       window.addEventListener("load", handler);
       return () => document.removeEventListener("load", handler);
@@ -71,12 +81,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    window.addEventListener('resize', () => {
+      if(!ctx.current || !canv.current) return;
+      setSize(window.innerHeight, window.innerWidth);
+    })
+  })
+
+  useEffect(() => {
     if(!ctx.current || !canv.current) return;
     const handleMouseMove = (e) => {
       mouseTurned.current += e.movementX * -0.02;
     }
     const handleKeyDown = (e) => {
-      console.log(e.key);
       keyPressed.current[e.key] = true;
     }
     const handleKeyUp = (e) => {
@@ -96,21 +112,19 @@ export default function Home() {
     setInterval(() => {
       if(!ctx.current || !canv.current) return;
       player.move(keyPressed.current,configs.player_speed);
+      checkTurn();
       screen.drawScreen(ctx.current, canv.current, player.rayCastInTheFov());
       screen.drawMap(ctx.current, map.map2D, player.position.x, player.position.y)
     }, 1000/60);
   })
 
   return (
-    <div className={styles.container}>
+    <>
       <Head>
         <title>Create Next App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <main>
-        <canvas id="canvas" width="1400" height="600"></canvas>
-      </main>
-    </div>
+      <canvas id="canvas" style={{height: "100vh",width: "100vw", position: "absolute", top: "0", left: "0"}}></canvas>
+    </>
   )
 }

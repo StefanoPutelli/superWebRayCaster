@@ -243,7 +243,7 @@ export class Player extends Entity {
                         if (this.map2D.map2D[dY][dX].value === '#' ) {
                             fov_array.push({
                                 distance: Math.abs(x_distance * fish_eye_correction),
-                                block_id: this.map2D.map2D[dY][dX].id,
+                                block_id: this.map2D.map2D[dY][dX].block_id,
                                 block_face: cosSign === 1 ? 'W' : 'E'
                             });
                             break;
@@ -264,7 +264,7 @@ export class Player extends Entity {
                         if (this.map2D.map2D[dY][dX].value === '#') {
                             fov_array.push({
                                 distance: Math.abs(y_distance * fish_eye_correction),
-                                block_id: this.map2D.map2D[dY][dX].id,
+                                block_id: this.map2D.map2D[dY][dX].block_id,
                                 block_face: sinSign === 1 ? 'N' : 'S'
                             });
                             break;
@@ -306,10 +306,11 @@ export class Screen {
             let halfHeight = screenCenter / fov_array[i].distance;
             let start = screenCenter - halfHeight;
             let end = screenCenter + halfHeight;
-            ctx.strokeStyle = "rgba(0, 0, 255, " + 1/fov_array[i].distance + ")";
+            ctx.strokeStyle = "rgba(0, " + fov_array[i].block_id % 2 ? 100 : 200   + ", 255, " + 1/fov_array[i].distance + ")";
             ctx.beginPath();
-            ctx.moveTo(i + this.margin, start);
-            ctx.lineTo(i + this.margin, end);
+            let x = fov_array.length - i + this.margin;
+            ctx.moveTo(x, start);
+            ctx.lineTo(x, end);
             ctx.stroke();
         }
 
@@ -320,7 +321,7 @@ export class Screen {
     drawMap(ctx, map2D, playerX, playerY) {
         let mapWidth = map2D[0].length;
         let mapHeight = map2D.length;
-        let mapScale = this.dimension.width * 0.5 / mapWidth;
+        let mapScale = this.dimension.width * 0.4 / mapWidth;
         ctx.fillStyle = "rgba(0,0,0,0)";
         ctx.fillRect(0, 0, mapWidth * mapScale, mapHeight * mapScale);
         for(let i = 0; i < mapHeight; i++) {
