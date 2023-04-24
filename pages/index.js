@@ -3,6 +3,11 @@ import { Player, Map2D, ScreenRenderer } from '../rayCastEngine/classes.js';
 import { useEffect, useRef } from 'react';
 import JoyStick from "./comp/joystick"
 
+import useWebSocket from 'react-use-websocket';
+
+const WS_URL = "ws://localhost:8000";
+const FPS = 50;
+
 const configs = {
   FOV: 60,
   initial_direction: 0,
@@ -41,11 +46,37 @@ const map_text = (
 
 const map = new Map2D(map_text);
 const player = new Player(configs, map, { x: 2, y: 2 }, 0);
+
+const other_players = {};
+
 const screenRenderer = new ScreenRenderer();
 
 //Probabilmene il fov array è al contrario
 
+function updateData(event) {
+  const data = JSON.parse(event.data);
+  if (data.type === "userdisconnected") {
+    delete other_players[data.userID];
+    return;
+  } else if (data.type === "playerupdate") {
+    other_players[data.userID] = data.data
+  } else if (data.type === "userconnected") {
+    console.log(data.data.username + " connected");
+  } else if (data.type === 'selfconnected') {
+    player.setID(data.userID)
+  }
+}
+
 export default function Home() {
+
+  const { sendJsonMessage, readyState } = useWebSocket(WS_URL, {
+    onOpen: () => console.log("connected"),
+    onMessage: updateData,
+    share: true,
+    filter: () => false,
+    retryOnError: true,
+    shouldReconnect: () => true
+  });
 
   const canv = useRef(null);
   const ctx = useRef(null);
@@ -79,6 +110,7 @@ export default function Home() {
       ctx.current = canv.current.getContext('2d');
       setSize(window.innerHeight, window.innerWidth, configs.FOV);
       canv.current.addEventListener("click", lockPointer);
+      sendJsonMessage({ type: "userconnected", username: "guest" });
     }
     if (document.readyState === "complete") {
       handler();
@@ -136,12 +168,18 @@ export default function Home() {
 
   useEffect(() => {
     setInterval(() => {
+      sendJsonMessage({ type: "playerupdate", data: { username: "guest", x: player.position.x, y: player.position.y } });
+    }, 1000 / FPS)
+  })
+
+  useEffect(() => {
+    setInterval(() => {
       if (!ctx.current || !canv.current) return;
       const fov_array = player.rayCastInTheFov();
       player.move(keyPressed.current, configs.player_speed);
       checkTurn();
       screenRenderer.drawScreen(ctx.current, canv.current, fov_array, configs.FOV);
-      screenRenderer.drawMap(ctx.current, canv.current, map.map2D, player.position.x, player.position.y)
+      screenRenderer.drawMap(ctx.current, canv.current, map.map2D, player.position.x, player.position.y, player.id, other_players)
     }, 1000 / 50);
   })
 

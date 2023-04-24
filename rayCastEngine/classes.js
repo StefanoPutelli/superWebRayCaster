@@ -10,9 +10,9 @@ export class Map2D {
         let buf = map_text.split("\n");
         let temp_map2D = buf.map((row) => row.split(''));
         let block_id_count = 0;
-        for(let i = 0; i < temp_map2D.length; i++){
+        for (let i = 0; i < temp_map2D.length; i++) {
             let row = [];
-            for(let j = 0; j < temp_map2D[i].length; j++){
+            for (let j = 0; j < temp_map2D[i].length; j++) {
                 row.push({
                     value: temp_map2D[i][j],
                     block_id: block_id_count++,
@@ -60,7 +60,7 @@ export class Entity {
         x: 0,
         y: 0
     }
-    constructor(position_, direction_){
+    constructor(position_, direction_) {
         this.position.x = position_.x
         this.position.y = position_.y
         this.direction = direction_
@@ -75,12 +75,13 @@ export class Player extends Entity {
     tile_size = 0;
     map_height = 0;
     map_width = 0;
+    id = null;
     constructor(conf, map2D, position, direction) {
-        super({x: position.x, y:position.y},direction);
+        super({ x: position.x, y: position.y }, direction);
         this.FOV = conf.FOV;
         this.direction = conf.initial_direction;
         this.dimension.height = conf.dimensions.height;
-        this.dimension.width = parseInt(conf.dimensions.width/conf.FOV)*conf.FOV;
+        this.dimension.width = parseInt(conf.dimensions.width / conf.FOV) * conf.FOV;
         this.RESOLUTION = parseInt(this.dimension.width / this.FOV);
         this.map2D = map2D;
         this.tile_size = conf.tile_size;
@@ -101,8 +102,13 @@ export class Player extends Entity {
         return num % 1;
     }
 
+    setID(id) {
+        this.id = id;
+        console.log("userID setted: " + this.id);
+    }
+
     setDimensions(width, height, fov) {
-        this.dimension.width = parseInt(width/fov)*fov;
+        this.dimension.width = parseInt(width / fov) * fov;
         this.dimension.height = height;
         this.RESOLUTION = parseInt(this.dimension.width / this.FOV);
     }
@@ -152,14 +158,14 @@ export class Player extends Entity {
     turn(value) {
         if (value > 0) {
             this.direction = this.direction + value >= 360 ? this.direction = 0 + this.direction + value - 360 : this.direction + value;
-        }else if (value < 0) {
+        } else if (value < 0) {
             this.direction = this.direction + value < 0 ? this.direction = 360 + this.direction + value : this.direction + value;
-        }else{
+        } else {
             return;
         }
     }
 
-    move(key,player_speed) {
+    move(key, player_speed) {
         let deltaX = 0;
         let deltaY = 0;
         if (key.w) {
@@ -181,12 +187,12 @@ export class Player extends Entity {
         if (deltaX !== 0 || deltaY !== 0) {
             let out_x = this.position.x + deltaX < 0 || this.position.x + deltaX >= this.map_width
             let out_y = this.position.y + deltaY < 0 || this.position.y + deltaY >= this.map_height
-            if(!(out_x || out_y)){
-                if (this.map2D.map2D[parseInt(this.position.y + deltaY)][parseInt(this.position.x + deltaX)].value === '#'){
-                    if(this.map2D.map2D[parseInt(this.position.y)][parseInt(this.position.x + deltaX)].value === '#'){
+            if (!(out_x || out_y)) {
+                if (this.map2D.map2D[parseInt(this.position.y + deltaY)][parseInt(this.position.x + deltaX)].value === '#') {
+                    if (this.map2D.map2D[parseInt(this.position.y)][parseInt(this.position.x + deltaX)].value === '#') {
                         deltaX = 0
                     }
-                    if(this.map2D.map2D[parseInt(this.position.y + deltaY)][parseInt(this.position.x)].value === '#'){
+                    if (this.map2D.map2D[parseInt(this.position.y + deltaY)][parseInt(this.position.x)].value === '#') {
                         deltaY = 0
                     }
                 }
@@ -215,7 +221,7 @@ export class Player extends Entity {
                 let dptY = 0;
                 let x_distance = 0;
                 let y_distance = 0;
-                
+
                 while (true) {
                     if (angle === 0 || angle === 180) {
                         y_distance = INT_MAX;
@@ -233,7 +239,7 @@ export class Player extends Entity {
                         let dX = parseInt(this.position.x + (x_distance * cosAngle + this.tile_size / 2 * cosSign));
                         let dY = parseInt(this.position.y - (x_distance * sinAngle));
                         dptX += 1;
-                        if(dY < 0 || dY > this.map_height || dX < 0 || dX > this.map_width){
+                        if (dY < 0 || dY > this.map_height || dX < 0 || dX > this.map_width) {
                             fov_array.push({
                                 distance: Math.abs(x_distance * fish_eye_correction),
                                 block_id: null,
@@ -241,7 +247,7 @@ export class Player extends Entity {
                             });
                             break;
                         }
-                        if (this.map2D.map2D[dY][dX].value === '#' ) {
+                        if (this.map2D.map2D[dY][dX].value === '#') {
                             fov_array.push({
                                 distance: Math.abs(x_distance * fish_eye_correction),
                                 block_id: this.map2D.map2D[dY][dX].block_id,
@@ -254,7 +260,7 @@ export class Player extends Entity {
                         let dX = parseInt(this.position.x + (y_distance * cosAngle));
                         let dY = parseInt(this.position.y - (y_distance * sinAngle + this.tile_size / 2 * sinSign));
                         dptY += 1;
-                        if(dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width){
+                        if (dY < 0 || dY >= this.map_height || dX < 0 || dX >= this.map_width) {
                             fov_array.push({
                                 distance: Math.abs(y_distance * fish_eye_correction),
                                 block_id: null,
@@ -270,9 +276,9 @@ export class Player extends Entity {
                             });
                             break;
                         }
-                        
+
                     }
-                    
+
                 }
             }
         }
@@ -280,16 +286,16 @@ export class Player extends Entity {
     }
 }
 
-export class ScreenRenderer{
-    drawScreen(ctx,canvas,fov_array,fov) {
+export class ScreenRenderer {
+    drawScreen(ctx, canvas, fov_array, fov) {
         const screenCenter = canvas.height / 2;
         canvas.width = canvas.width; //metodo per cancellare il canvas strano, ma funziona, forse più veloce
-        const margin = (canvas.width - parseInt(canvas.width/fov)*fov)/2
+        const margin = (canvas.width - parseInt(canvas.width / fov) * fov) / 2
         let current_block = fov_array[0].block_id;
         let currentFace = fov_array[0].block_face;
         let current_block_start = 0;
-        for(let i = 0; i < fov_array.length-1; i++) {
-            if(fov_array[i+1].block_id !== current_block || fov_array[i+1].block_face !== currentFace || i+1 === fov_array.length-1) {
+        for (let i = 0; i < fov_array.length - 1; i++) {
+            if (fov_array[i + 1].block_id !== current_block || fov_array[i + 1].block_face !== currentFace || i + 1 === fov_array.length - 1) {
                 ctx.beginPath();
                 ctx.moveTo(current_block_start + margin, screenCenter + screenCenter / fov_array[current_block_start].distance);
                 ctx.lineTo(i + margin, screenCenter + screenCenter / fov_array[i].distance);
@@ -305,28 +311,28 @@ export class ScreenRenderer{
                 //     ctx.drawImage(img,0,0,canvas.width,canvas.height);
                 // }
                 // ctx.restore();
-                current_block_start = i+1;
-                current_block = fov_array[i+1].block_id;
-                currentFace = fov_array[i+1].block_face;
+                current_block_start = i + 1;
+                current_block = fov_array[i + 1].block_id;
+                currentFace = fov_array[i + 1].block_face;
             }
         }
 
     }
-    drawMap(ctx,canvas, map2D, playerX, playerY) {
+    drawMap(ctx, canvas, map2D, playerX, playerY, myUserId, other_players) {
         let mapWidth = map2D[0].length;
         let mapHeight = map2D.length;
         let mapScale = canvas.height * 0.3 / mapWidth;
         ctx.fillStyle = "rgba(0,0,0,0)";
         ctx.fillRect(0, 0, mapWidth * mapScale, mapHeight * mapScale);
-        for(let i = 0; i < mapHeight; i++) {
-            for(let j = 0; j < mapWidth; j++) {
-                if(map2D[i][j].value === '#') {
+        for (let i = 0; i < mapHeight; i++) {
+            for (let j = 0; j < mapWidth; j++) {
+                if (map2D[i][j].value === '#') {
                     ctx.fillStyle = "rgba(255, 0, 0, 1)";
                     ctx.fillRect(j * mapScale, i * mapScale, mapScale, mapScale);
-                } else if(map2D[i][j].value === 'X') {
+                } else if (map2D[i][j].value === 'X') {
                     ctx.fillStyle = "rgba(0, 0, 255, 1)";
                     ctx.fillRect(j * mapScale, i * mapScale, mapScale, mapScale);
-                } else if(map2D[i][j].value === 'Y') {
+                } else if (map2D[i][j].value === 'Y') {
                     ctx.fillStyle = "rgba(0, 255, 255, 1)";
                     ctx.fillRect(j * mapScale, i * mapScale, mapScale, mapScale);
                 }
@@ -334,7 +340,19 @@ export class ScreenRenderer{
         }
         ctx.beginPath();
         ctx.fillStyle = "rgba(0, 255, 0, 1)";
-        ctx.arc(playerX*mapScale, playerY*mapScale, mapScale/2, 0, 2 * Math.PI);
+        ctx.arc(playerX * mapScale, playerY * mapScale, mapScale / 2, 0, 2 * Math.PI);
         ctx.fill();
+        if(myUserId === null) return;
+        const players_keys = Object.keys(other_players);
+        for (let i = 0; i < players_keys.length; i++) {
+            if(players_keys[i] === myUserId) continue;
+            const other_playerX = other_players[players_keys[i]].x;
+            const other_playerY = other_players[players_keys[i]].y;
+            ctx.beginPath();
+            ctx.fillStyle = "rgba(0, 255, 255, 1)";
+            ctx.arc(other_playerX * mapScale, other_playerY * mapScale, mapScale / 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
     }
 }
