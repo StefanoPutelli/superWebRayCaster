@@ -5,7 +5,7 @@ import JoyStick from "./comp/joystick"
 
 import useWebSocket from 'react-use-websocket';
 
-const WS_URL = "ws://localhost:8000";
+const WS_URL = "wss://stepo.cloud/ws";
 const FPS = 50;
 
 const configs = {
