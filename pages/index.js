@@ -65,6 +65,8 @@ function updateData(event) {
       value: TYPES.OTHER_PLAYER,
       x: data.data.x,
       y: data.data.y,
+      username: data.data.username,
+      id: data.userID
     }
   } else if (data.type === "userconnected") {
     console.log(data.data.username + " connected");
@@ -88,6 +90,9 @@ export default function Home() {
   const canv = useRef(null);
   const ctx = useRef(null);
 
+  const entities_canv = useRef();
+  const entities_ctx = useRef();
+
   const keyPressed = useRef({})
   const mouseTurned = useRef(0);
 
@@ -101,6 +106,9 @@ export default function Home() {
   function setSize(height, width, fov) {
     canv.current.width = width;
     canv.current.height = height;
+    entities_canv.current.width = width;
+    entities_canv.current.height = height;
+    entities_ctx.current.imageSmoothingEnabled = false;
     ctx.current.imageSmoothingEnabled = false;
     player.setDimensions(canv.current.width, canv.current.height, fov);
   }
@@ -115,8 +123,10 @@ export default function Home() {
     function handler() {
       canv.current = document.getElementById('canvas');
       ctx.current = canv.current.getContext('2d');
+      entities_canv.current = document.getElementById('entities');
+      entities_ctx.current = entities_canv.current.getContext('2d');
       setSize(window.innerHeight, window.innerWidth, configs.FOV);
-      canv.current.addEventListener("click", lockPointer);
+      entities_canv.current.addEventListener("click", lockPointer);
       sendJsonMessage({ type: "userconnected", username: "guest" });
     }
     if (document.readyState === "complete") {
@@ -184,10 +194,16 @@ export default function Home() {
       if (!ctx.current || !canv.current) return;
       const map2D = map.getFullMap(other_players);
       const map_size = map.getDimensions();
-      const fov_array = player.rayCastInTheFov(map2D,map_size);
+      const result = player.rayCastInTheFov(map2D,map_size);
+      const resolution = player.getResolution();
       player.move(keyPressed.current, configs.player_speed, map2D, map_size);
       checkTurn();
-      screenRenderer.drawScreen(ctx.current, canv.current, fov_array, configs.FOV);
+
+      screenRenderer.cleanCanvas(ctx.current, canv.current);
+      screenRenderer.cleanCanvas(entities_ctx.current, entities_canv.current);
+      
+      screenRenderer.drawWalls(ctx.current, canv.current, result.fov_array, configs.FOV);
+      screenRenderer.drawEntities(entities_ctx.current,entities_canv.current, result.entity_array, configs.FOV, resolution);
       screenRenderer.drawMap(ctx.current, canv.current, map.map2D, player.position.x, player.position.y, player.id, other_players)
     }, 1000 / FPS);
   })
@@ -202,6 +218,7 @@ export default function Home() {
 
       </Head>
       <canvas id="canvas" style={{ height: "100svh", width: "100vw", position: "absolute", top: "0", left: "0", zIndex: "-1" }}></canvas>
+      <canvas id="entities" style={{ height: "100svh", width: "100vw", position: "absolute", top: "0", left: "0" }}></canvas>
       <JoyStick key_pressed={keyPressed} />
       <div style={{ position: "absolute", right: "0", top: "0", color: "black" }}>
         <p>WASD to move</p>

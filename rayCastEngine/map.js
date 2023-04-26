@@ -15,10 +15,12 @@ export default class Map2D {
                 row.push({
                     value: temp_map2D[i][j],
                     block_id: block_id_count++,
-                    inner_position: {
+                    position: {
                         x: 0,
                         y: 0
-                    }
+                    },
+                    id : null,
+                    username : null
                 });
             }
             this.map2D.push(row);
@@ -53,7 +55,7 @@ export default class Map2D {
         return this.size
     }
     getFullMap(player_to_insert){
-        let map = this.map2D;
+        let map = [...this.map2D];
         if(this.myID === null) return map;
         const keys = Object.keys(player_to_insert);
         for(let i = 0; i < keys.length; i++){
@@ -61,8 +63,10 @@ export default class Map2D {
             const thing_x_int = parseInt(player_to_insert[keys[i]].x);
             const thing_y_int = parseInt(player_to_insert[keys[i]].y);
             map[thing_y_int][thing_x_int].value = player_to_insert[keys[i]].value;
-            map[thing_y_int][thing_x_int].inner_position.x = player_to_insert[keys[i]].x%1;
-            map[thing_y_int][thing_x_int].inner_position.y = player_to_insert[keys[i]].y%1;
+            map[thing_y_int][thing_x_int].position.x = player_to_insert[keys[i]].x;
+            map[thing_y_int][thing_x_int].position.y = player_to_insert[keys[i]].y;
+            map[thing_y_int][thing_x_int].username = player_to_insert[keys[i]].username;
+            map[thing_y_int][thing_x_int].id = player_to_insert[keys[i]].id;
         }
         return map;
     }

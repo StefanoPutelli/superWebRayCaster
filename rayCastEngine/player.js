@@ -45,10 +45,15 @@ export default class Player {
         console.log("userID setted: " + this.id);
     }
 
+    getResolution(){
+        return this.RESOLUTION;
+    }
+
     setDimensions(width, height, fov) {
         this.dimension.width = parseInt(width / fov) * fov;
         this.dimension.height = height;
         this.RESOLUTION = parseInt(this.dimension.width / this.FOV);
+        console.log(this.dimension.width + " " + this.dimension.height + " " + this.RESOLUTION);
     }
 
     getPlayerPosition() {
@@ -186,7 +191,7 @@ export default class Player {
                             });
                             break;
                         }
-                        if (this.pushToFovArray(fov_array,entity_array, fov_index, last_block, map2D[dY][dX], block_distance, block_face, last_ray)) break;
+                        if (this.pushToFovArray(fov_array,entity_array, fov_index, last_block, map2D[dY][dX], block_distance, block_face, last_ray,this.FOV)) break;
                     } else {
                         dX = parseInt(this.position.x + (y_distance * cosAngle));
                         dY = parseInt(this.position.y - (y_distance * sinAngle + this.tile_size / 2 * sinSign));
@@ -203,7 +208,7 @@ export default class Player {
                             });
                             break;
                         }
-                        if (this.pushToFovArray(fov_array,entity_array, fov_index, last_block, map2D[dY][dX], block_distance, block_face, last_ray)) break;
+                        if (this.pushToFovArray(fov_array,entity_array, fov_index, last_block, map2D[dY][dX], block_distance, block_face, last_ray,this.FOV)) break;
                     }
                 }
                 last_block.type = map2D[dY][dX].value
@@ -214,10 +219,22 @@ export default class Player {
                 fov_index++;
             }
         }
-        return fov_array;
+        return {
+            fov_array : fov_array,
+            entity_array : entity_array
+        };
     }
 
-    pushToFovArray(fov_array,entity_array, fov_index, last_block, map_tile, block_distance, block_face, last_ray) {
+    get2DpointDistance(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
+    }
+
+    get2DpointAngle(x1, y1, x2, y2,fov) {
+        let angle = Math.atan2(x2 - x1,y2 - y1) * 180 / M_PI;
+        return  fov/2 - (((angle + 270)%360) - this.direction);
+    }
+
+    pushToFovArray(fov_array,entity_array, fov_index, last_block, map_tile, block_distance, block_face, last_ray,fov) {
         switch (map_tile.value) {
             case TYPES.WALL: {
                 const curren_block = {
@@ -244,12 +261,21 @@ export default class Player {
                 return 1;
             }
             case TYPES.OTHER_PLAYER: {
+                if(this.id === map_tile.id) return 0;
+                for(let i = 0; i < entity_array.length; i++){
+                    if(entity_array[i].block_id === map_tile.block_id || entity_array[i].playerInfo.player_id === map_tile.id) {
+                        return 0;
+                    }
+                }
+                const player_distance = this.get2DpointDistance(this.position.x,this.position.y,map_tile.position.x,map_tile.position.y)
+                const player_angle = this.get2DpointAngle(this.position.x,this.position.y,map_tile.position.x,map_tile.position.y,fov)
                 entity_array.push({
                     type: TYPES.OTHER_PLAYER,
                     playerInfo: {
-                        position:{
-
-                        }
+                        player_fov_index : parseInt(player_angle * this.RESOLUTION),
+                        player_distance : player_distance,
+                        player_id : map_tile.id,
+                        username : map_tile.username
                     },
                     distance: block_distance,
                     block_id: map_tile.block_id,
