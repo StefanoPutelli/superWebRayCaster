@@ -1,16 +1,19 @@
 import Head from 'next/head';
-import { Player, Map2D, ScreenRenderer } from '../rayCastEngine/classes.js';
+import ScreenRenderer from '../rayCastEngine/screen.js';
+import Map2D from '../rayCastEngine/map.js';
+import Player from '../rayCastEngine/player.js';
 import { useEffect, useRef } from 'react';
 import JoyStick from "./comp/joystick"
+import TYPES from '../rayCastEngine/utils/tile_types.js';
 
 import useWebSocket from 'react-use-websocket';
 
 const WS_URL = "wss://stepo.cloud/ws";
-const FPS = 50;
+const FPS = 0.5;
 
 const configs = {
   FOV: 60,
-  initial_direction: 0,
+  initial_direction: -90,
   dimensions: {
     width: 660,
     height: 600
@@ -45,7 +48,7 @@ const map_text = (
 )
 
 const map = new Map2D(map_text);
-const player = new Player(configs, map, { x: 2, y: 2 }, 0);
+const player = new Player(configs, { x: 2, y: 2 }, 0);
 
 const other_players = {};
 
@@ -59,11 +62,16 @@ function updateData(event) {
     delete other_players[data.userID];
     return;
   } else if (data.type === "playerupdate") {
-    other_players[data.userID] = data.data
+    other_players[data.userID] = {
+      value: TYPES.OTHER_PLAYER,
+      x: data.data.x,
+      y: data.data.y,
+    }
   } else if (data.type === "userconnected") {
     console.log(data.data.username + " connected");
   } else if (data.type === 'selfconnected') {
     player.setID(data.userID)
+    map.setID(data.userID);
   }
 }
 
@@ -175,12 +183,14 @@ export default function Home() {
   useEffect(() => {
     setInterval(() => {
       if (!ctx.current || !canv.current) return;
-      const fov_array = player.rayCastInTheFov();
-      player.move(keyPressed.current, configs.player_speed);
+      const map2D = map.getFullMap(other_players);
+      const map_size = map.getDimensions();
+      const fov_array = player.rayCastInTheFov(map2D,map_size);
+      player.move(keyPressed.current, configs.player_speed, map2D, map_size);
       checkTurn();
       screenRenderer.drawScreen(ctx.current, canv.current, fov_array, configs.FOV);
       screenRenderer.drawMap(ctx.current, canv.current, map.map2D, player.position.x, player.position.y, player.id, other_players)
-    }, 1000 / 50);
+    }, 1000 / FPS);
   })
 
 

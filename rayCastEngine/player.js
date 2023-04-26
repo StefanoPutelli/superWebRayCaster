@@ -1,0 +1,234 @@
+import TYPES from "./utils/tile_types.js";
+
+const M_PI = 3.14159265358979323846;
+const INT_MAX = 2147483647;
+
+export default class Player {
+    direction = 0
+    position = {
+        x: 0,
+        y: 0
+    }
+    FOV = 0;
+    RESOLUTION = 0;
+    dimension = { width: 0, height: 0 };
+    map2D = null;
+    tile_size = 1;
+    map_height = 0;
+    map_width = 0;
+    id = null;
+    constructor(conf, position, direction) {
+        this.direction = direction;
+        this.position.x = position.x;
+        this.position.y = position.y;
+        this.FOV = conf.FOV;
+        this.direction = conf.initial_direction;
+        this.dimension.height = conf.dimensions.height;
+        this.dimension.width = parseInt(conf.dimensions.width / conf.FOV) * conf.FOV;
+        this.RESOLUTION = parseInt(this.dimension.width / this.FOV);
+        console.log("RayCaster constructor");
+        console.log("direction " + this.direction)
+        console.log("position x " + this.position.x + " y " + this.position.y)
+        console.log("FOV " + this.FOV)
+        console.log("dimension height " + this.dimension.height + " width " + this.dimension.width)
+        console.log("RESOLUTION " + this.RESOLUTION)
+        console.log("tile_size " + this.tile_size)
+        console.log("----------------------")
+    }
+
+    getDecimals(num) {
+        return num % 1;
+    }
+
+    setID(id) {
+        this.id = id;
+        console.log("userID setted: " + this.id);
+    }
+
+    setDimensions(width, height, fov) {
+        this.dimension.width = parseInt(width / fov) * fov;
+        this.dimension.height = height;
+        this.RESOLUTION = parseInt(this.dimension.width / this.FOV);
+    }
+
+    getPlayerPosition() {
+        return this.position;
+    }
+
+    getDirVars(angle, playerX, playerY) {
+        if (angle < 90) {
+            return {
+                "x": this.tile_size - this.getDecimals(playerX),
+                "y": this.getDecimals(playerY)
+            };
+        } else if (angle < 180) {
+            return {
+                "x": this.getDecimals(playerX),
+                "y": this.getDecimals(playerY)
+            };
+        } else if (angle < 270) {
+            return {
+                "x": this.getDecimals(playerX),
+                "y": this.tile_size - this.getDecimals(playerY)
+            };
+        } else {
+            return {
+                "x": this.tile_size - this.getDecimals(playerX),
+                "y": this.tile_size - this.getDecimals(playerY)
+            };
+        }
+    }
+
+    turn(value) {
+        if (value > 0) {
+            this.direction = this.direction + value >= 360 ? this.direction = 0 + this.direction + value - 360 : this.direction + value;
+        } else if (value < 0) {
+            this.direction = this.direction + value < 0 ? this.direction = 360 + this.direction + value : this.direction + value;
+        } else {
+            return;
+        }
+    }
+
+    move(key, player_speed, map2D, map_size) {
+        let deltaX = 0;
+        let deltaY = 0;
+        if (key.w) {
+            deltaY += -player_speed * Math.sin(this.direction * M_PI / 180);
+            deltaX += player_speed * Math.cos(this.direction * M_PI / 180);
+        }
+        if (key.s) {
+            deltaY += player_speed * Math.sin(this.direction * M_PI / 180);
+            deltaX += -player_speed * Math.cos(this.direction * M_PI / 180);
+        }
+        if (key.a) {
+            deltaY += -player_speed * Math.cos(this.direction * M_PI / 180);
+            deltaX += -player_speed * Math.sin(this.direction * M_PI / 180);
+        }
+        if (key.d) {
+            deltaY += player_speed * Math.cos(this.direction * M_PI / 180);
+            deltaX += player_speed * Math.sin(this.direction * M_PI / 180);
+        }
+        if (deltaX !== 0 || deltaY !== 0) {
+            let out_x = this.position.x + deltaX < 0 || this.position.x + deltaX >= map_size.width
+            let out_y = this.position.y + deltaY < 0 || this.position.y + deltaY >= map_size.height
+            if (!(out_x || out_y)) {
+                if (map2D[parseInt(this.position.y + deltaY)][parseInt(this.position.x + deltaX)].value === '#') {
+                    if (map2D[parseInt(this.position.y)][parseInt(this.position.x + deltaX)].value === '#') {
+                        deltaX = 0
+                    }
+                    if (map2D[parseInt(this.position.y + deltaY)][parseInt(this.position.x)].value === '#') {
+                        deltaY = 0
+                    }
+                }
+            }
+            this.position.x += deltaX;
+            this.position.y += deltaY;
+        }
+    }
+
+    rayCastInTheFov(map2D, map_size) {
+        let start = parseInt(this.direction - (this.FOV / 2));
+        let end = parseInt(this.direction + (this.FOV / 2));
+        let fov_array = [];
+        let last_block = {
+            id : -1,
+            face : ""
+        };
+        for (let i = end - 1; i >= start; i--) {
+            for (let r = 0; r < this.RESOLUTION; r++) {
+                let pre_angle = i % 360 - r / this.RESOLUTION;
+                let angle = pre_angle < 0 ? pre_angle + 360 : pre_angle;
+                let dirVal = this.getDirVars(angle, this.position.x, this.position.y);
+                let angle_rad = (angle * M_PI / 180);
+                let sinAngle = Math.sin(angle_rad);
+                let cosAngle = Math.cos(angle_rad);
+                let sinSign = sinAngle > 0 ? 1 : -1;
+                let cosSign = cosAngle > 0 ? 1 : -1;
+                let dptX = 0;
+                let dptY = 0;
+                let x_distance = 0;
+                let y_distance = 0;
+                while (true) {
+                    if (angle === 0 || angle === 180) {
+                        y_distance = INT_MAX;
+                    } else {
+                        y_distance = ((dirVal.y + (dptY * this.tile_size)) / Math.abs(sinAngle));
+                    }
+                    if (angle === 90 || angle === 270) {
+                        x_distance = INT_MAX;
+                    } else {
+                        x_distance = ((dirVal.x + (dptX * this.tile_size)) / Math.abs(cosAngle));
+                    }
+                    let fov_index = (i - start) * this.RESOLUTION - r;
+                    let fish_eye_correction = Math.cos((fov_index / this.RESOLUTION - this.FOV / 2) * M_PI / 180);
+                    if (x_distance < y_distance) {
+                        let dX = parseInt(this.position.x + (x_distance * cosAngle + this.tile_size / 2 * cosSign));
+                        let dY = parseInt(this.position.y - (x_distance * sinAngle));
+                        dptX += 1;
+                        if (dY < 0 || dY > map_size.height || dX < 0 || dX > map_size.width) {
+                            fov_array.push({
+                                distance: Math.abs(x_distance * fish_eye_correction),
+                                block_id: null,
+                                block_face: null
+                            });
+                            break;
+                        }
+                        if (this.pushToFovArray(fov_array,last_block, map2D[dY][dX], Math.abs(x_distance * fish_eye_correction), cosSign === 1 ? 'W' : 'E')) break;
+                    } else {
+                        let dX = parseInt(this.position.x + (y_distance * cosAngle));
+                        let dY = parseInt(this.position.y - (y_distance * sinAngle + this.tile_size / 2 * sinSign));
+                        dptY += 1;
+                        if (dY < 0 || dY >= map_size.height || dX < 0 || dX >= map_size.width) {
+                            fov_array.push({
+                                distance: Math.abs(y_distance * fish_eye_correction),
+                                block_id: null,
+                                block_face: null
+                            });
+                            break;
+                        }
+                        if (this.pushToFovArray(fov_array,last_block, map2D[dY][dX], Math.abs(y_distance * fish_eye_correction), sinSign === 1 ? 'N' : 'S')) break;
+                        // console.log(last_block)
+                    }
+                    break
+                }
+            }
+        }
+        // console.log(fov_array)
+        return fov_array;
+    }
+
+    pushToFovArray(fov_array,last_block, map_tile, block_distance, block_face) {
+        switch (map_tile.value) {
+            case TYPES.WALL: {
+                console.log("wall")
+                if (map_tile.block_id === last_block.id || block_face === last_block.face) return 1;
+                fov_array.push({
+                    type: TYPES.WALL,
+                    distance: block_distance,
+                    block_id: map_tile.block_id,
+                    block_face: block_face
+                });
+                last_block.id = map_tile.block_id;
+                last_block.face = block_face;
+                console.log(last_block.face)
+                return 1;
+            }
+            case TYPES.OTHER_PLAYER: {
+                fov_array.push({
+                    type: TYPES.OTHER_PLAYER,
+                    playerInfo: {
+                        position:{
+
+                        }
+                    },
+                    distance: block_distance,
+                    block_id: map_tile.block_id,
+                    block_face: block_face
+                });
+                return 0;
+            }
+        }
+        return 0;
+    }
+
+}
