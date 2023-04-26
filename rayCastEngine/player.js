@@ -130,11 +130,16 @@ export default class Player {
         let start = parseInt(this.direction - (this.FOV / 2));
         let end = parseInt(this.direction + (this.FOV / 2));
         let fov_array = [];
+        let entity_array = [];
         let last_block = {
-            id : -1,
-            face : ""
+            type: null,
+            distance: null,
+            block_id: null,
+            block_face: null,
+            fov_index: null
         };
-        for (let i = end - 1; i >= start; i--) {
+        let fov_index = 0;
+        for (let i = end; i >= start; i--) {
             for (let r = 0; r < this.RESOLUTION; r++) {
                 let pre_angle = i % 360 - r / this.RESOLUTION;
                 let angle = pre_angle < 0 ? pre_angle + 360 : pre_angle;
@@ -148,6 +153,11 @@ export default class Player {
                 let dptY = 0;
                 let x_distance = 0;
                 let y_distance = 0;
+                let last_ray = fov_index === this.FOV * this.RESOLUTION - 1;
+                let dX;
+                let dY;
+                let block_distance;
+                let block_face;
                 while (true) {
                     if (angle === 0 || angle === 180) {
                         y_distance = INT_MAX;
@@ -159,62 +169,82 @@ export default class Player {
                     } else {
                         x_distance = ((dirVal.x + (dptX * this.tile_size)) / Math.abs(cosAngle));
                     }
-                    let fov_index = (i - start) * this.RESOLUTION - r;
                     let fish_eye_correction = Math.cos((fov_index / this.RESOLUTION - this.FOV / 2) * M_PI / 180);
                     if (x_distance < y_distance) {
-                        let dX = parseInt(this.position.x + (x_distance * cosAngle + this.tile_size / 2 * cosSign));
-                        let dY = parseInt(this.position.y - (x_distance * sinAngle));
+                        dX = parseInt(this.position.x + (x_distance * cosAngle + this.tile_size / 2 * cosSign));
+                        dY = parseInt(this.position.y - (x_distance * sinAngle));
                         dptX += 1;
+                        block_distance = Math.abs(x_distance * fish_eye_correction);
+                        block_face = cosSign === 1 ? 'W' : 'E';
                         if (dY < 0 || dY > map_size.height || dX < 0 || dX > map_size.width) {
+                            console.log("invalid point")
                             fov_array.push({
-                                distance: Math.abs(x_distance * fish_eye_correction),
+                                distance: block_distance,
                                 block_id: null,
-                                block_face: null
+                                block_face: null,
+                                fov_index: null
                             });
                             break;
                         }
-                        if (this.pushToFovArray(fov_array,last_block, map2D[dY][dX], Math.abs(x_distance * fish_eye_correction), cosSign === 1 ? 'W' : 'E')) break;
+                        if (this.pushToFovArray(fov_array,entity_array, fov_index, last_block, map2D[dY][dX], block_distance, block_face, last_ray)) break;
                     } else {
-                        let dX = parseInt(this.position.x + (y_distance * cosAngle));
-                        let dY = parseInt(this.position.y - (y_distance * sinAngle + this.tile_size / 2 * sinSign));
+                        dX = parseInt(this.position.x + (y_distance * cosAngle));
+                        dY = parseInt(this.position.y - (y_distance * sinAngle + this.tile_size / 2 * sinSign));
                         dptY += 1;
+                        block_distance = Math.abs(y_distance * fish_eye_correction);
+                        block_face = sinSign === 1 ? 'N' : 'S';
                         if (dY < 0 || dY >= map_size.height || dX < 0 || dX >= map_size.width) {
+                            console.log("invalid point")
                             fov_array.push({
-                                distance: Math.abs(y_distance * fish_eye_correction),
+                                distance: block_distance,
                                 block_id: null,
-                                block_face: null
+                                block_face: null,
+                                fov_index: null
                             });
                             break;
                         }
-                        if (this.pushToFovArray(fov_array,last_block, map2D[dY][dX], Math.abs(y_distance * fish_eye_correction), sinSign === 1 ? 'N' : 'S')) break;
-                        // console.log(last_block)
+                        if (this.pushToFovArray(fov_array,entity_array, fov_index, last_block, map2D[dY][dX], block_distance, block_face, last_ray)) break;
                     }
-                    break
                 }
+                last_block.type = map2D[dY][dX].value
+                last_block.distance = block_distance
+                last_block.block_id = map2D[dY][dX].block_id
+                last_block.block_face = block_face
+                last_block.fov_index = fov_index
+                fov_index++;
             }
         }
-        // console.log(fov_array)
         return fov_array;
     }
 
-    pushToFovArray(fov_array,last_block, map_tile, block_distance, block_face) {
+    pushToFovArray(fov_array,entity_array, fov_index, last_block, map_tile, block_distance, block_face, last_ray) {
         switch (map_tile.value) {
             case TYPES.WALL: {
-                console.log("wall")
-                if (map_tile.block_id === last_block.id || block_face === last_block.face) return 1;
-                fov_array.push({
+                const curren_block = {
                     type: TYPES.WALL,
                     distance: block_distance,
                     block_id: map_tile.block_id,
-                    block_face: block_face
-                });
-                last_block.id = map_tile.block_id;
-                last_block.face = block_face;
-                console.log(last_block.face)
+                    block_face: block_face,
+                    fov_index: fov_index
+                }
+                if (fov_index === 0) {
+                    fov_array.push(curren_block);
+                    return 1;
+                }else if((curren_block.block_id !== last_block.block_id || curren_block.block_face !== last_block.block_face) || last_ray){
+                    const last_block_push = {
+                        type: last_block.type,
+                        distance: last_block.distance,
+                        block_id: last_block.block_id,
+                        block_face: last_block.block_face,
+                        fov_index: last_block.fov_index
+                    }
+                    fov_array.push(last_block_push);
+                    fov_array.push(curren_block);
+                }
                 return 1;
             }
             case TYPES.OTHER_PLAYER: {
-                fov_array.push({
+                entity_array.push({
                     type: TYPES.OTHER_PLAYER,
                     playerInfo: {
                         position:{
@@ -223,7 +253,8 @@ export default class Player {
                     },
                     distance: block_distance,
                     block_id: map_tile.block_id,
-                    block_face: block_face
+                    block_face: block_face,
+                    fov_index : fov_index
                 });
                 return 0;
             }
