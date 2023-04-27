@@ -1,4 +1,5 @@
 import TYPES from "./utils/tile_types.js";
+import conf from "./utils/config.js";
 
 const M_PI = 3.14159265358979323846;
 const INT_MAX = 2147483647;
@@ -52,7 +53,7 @@ export default class Player {
     setDimensions(width, height, fov) {
         this.dimension.width = parseInt(width / fov) * fov;
         this.dimension.height = height;
-        this.RESOLUTION = parseInt(this.dimension.width / this.FOV);
+        this.RESOLUTION = parseInt(this.dimension.width / this.FOV) / conf.res_optimizer;
         console.log(this.dimension.width + " " + this.dimension.height + " " + this.RESOLUTION);
     }
 
@@ -272,7 +273,7 @@ export default class Player {
                 entity_array.push({
                     type: TYPES.OTHER_PLAYER,
                     playerInfo: {
-                        player_fov_index : parseInt(player_angle * this.RESOLUTION),
+                        player_fov_index : parseInt(player_angle * this.RESOLUTION * conf.res_optimizer),
                         player_distance : player_distance,
                         player_id : map_tile.id,
                         username : map_tile.username

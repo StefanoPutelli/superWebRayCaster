@@ -55,7 +55,7 @@ export default class Map2D {
         return this.size
     }
     getFullMap(player_to_insert){
-        let map = [...this.map2D];
+        let map = JSON.parse(JSON.stringify(this.map2D));
         if(this.myID === null) return map;
         const keys = Object.keys(player_to_insert);
         for(let i = 0; i < keys.length; i++){

@@ -1,3 +1,5 @@
+import conf from "./utils/config.js";
+
 export default class ScreenRenderer {
     cleanCanvas(ctx, canvas) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -6,11 +8,13 @@ export default class ScreenRenderer {
         const screenCenter = canvas.height / 2;
         const margin = (canvas.width - parseInt(canvas.width / fov) * fov) / 2
         for (let i = 0; i < fov_array.length - 1; i += 2) {
+            const fov_index_0 = fov_array[i].fov_index * conf.res_optimizer;
+            const fov_index_1 = fov_array[i + 1].fov_index * conf.res_optimizer;
             ctx.beginPath();
-            ctx.moveTo(fov_array[i].fov_index + margin, screenCenter + screenCenter / fov_array[i].distance);
-            ctx.lineTo(fov_array[i + 1].fov_index + margin, screenCenter + screenCenter / fov_array[i + 1].distance);
-            ctx.lineTo(fov_array[i + 1].fov_index + margin, screenCenter - screenCenter / fov_array[i + 1].distance);
-            ctx.lineTo(fov_array[i].fov_index + margin, screenCenter - screenCenter / fov_array[i].distance);
+            ctx.moveTo(fov_index_0 + margin, screenCenter + screenCenter / fov_array[i].distance);
+            ctx.lineTo(fov_index_1 + margin, screenCenter + screenCenter / fov_array[i + 1].distance);
+            ctx.lineTo(fov_index_1 + margin, screenCenter - screenCenter / fov_array[i + 1].distance);
+            ctx.lineTo(fov_index_0 + margin, screenCenter - screenCenter / fov_array[i].distance);
             ctx.closePath();
             ctx.fillStyle = "rgba(0,0,0,1)";
             ctx.fill();
@@ -27,7 +31,7 @@ export default class ScreenRenderer {
         const screenCenter = canvas.height / 2;
         const margin = (canvas.width - parseInt(canvas.width / fov) * fov) / 2
         for (let i = 0; i < entity_array.length; i++) {
-            if (entity_array[i].playerInfo.player_fov_index > 0 && entity_array[i].playerInfo.player_fov_index <= fov * res) {
+            if (entity_array[i].playerInfo.player_fov_index > 0 && entity_array[i].playerInfo.player_fov_index <= fov * res * conf.res_optimizer) {
                 ctx.beginPath();
                 ctx.arc(entity_array[i].playerInfo.player_fov_index + margin, screenCenter, screenCenter/2/entity_array[i].playerInfo.player_distance, 0, 2 * Math.PI);
                 ctx.fillStyle = "rgba(255,255,0,1)";
