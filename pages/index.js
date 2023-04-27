@@ -9,7 +9,7 @@ import TYPES from '../rayCastEngine/utils/tile_types.js';
 import useWebSocket from 'react-use-websocket';
 
 const WS_URL = "wss://stepo.cloud/ws";
-const FPS = 50;
+const FPS = 30;
 
 const configs = {
   FOV: 60,
@@ -19,7 +19,7 @@ const configs = {
     height: 600
   },
   tile_size: 1,
-  player_speed: 0.1
+  player_speed: 0.06
 }
 
 const map_text = (

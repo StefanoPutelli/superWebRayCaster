@@ -34,7 +34,7 @@ export default class ScreenRenderer {
             if (entity_array[i].playerInfo.player_fov_index > 0 && entity_array[i].playerInfo.player_fov_index <= fov * res * conf.res_optimizer) {
                 ctx.beginPath();
                 ctx.arc(entity_array[i].playerInfo.player_fov_index + margin, screenCenter, screenCenter/2/entity_array[i].playerInfo.player_distance, 0, 2 * Math.PI);
-                ctx.fillStyle = "rgba(255,255,0,1)";
+                ctx.fillStyle = "rgba(0, 255, 255, 1)";
                 ctx.fill();
             }
         }
