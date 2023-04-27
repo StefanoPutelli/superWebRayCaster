@@ -261,7 +261,7 @@ export default class Player {
                 return 1;
             }
             case TYPES.OTHER_PLAYER: {
-                if(this.id === map_tile.id) return 0;
+                // if(this.id === map_tile.id) return 0;
                 for(let i = 0; i < entity_array.length; i++){
                     if(entity_array[i].block_id === map_tile.block_id || entity_array[i].playerInfo.player_id === map_tile.id) {
                         return 0;

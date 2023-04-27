@@ -40,11 +40,6 @@ export default class Map2D {
         maxColLenght = this.map2D.length;
         return { maxRowLenght, maxColLenght};
     }
-    printMap() {
-        this.map2D.forEach((row) => {
-            console.log(row.join(''));
-        })
-    }
     setID(id) {
         this.myID = id;
     }
@@ -55,7 +50,7 @@ export default class Map2D {
         return this.size
     }
     getFullMap(player_to_insert){
-        let map = [...this.map2D];
+        const map = JSON.parse(JSON.stringify(this.map2D));
         if(this.myID === null) return map;
         const keys = Object.keys(player_to_insert);
         for(let i = 0; i < keys.length; i++){

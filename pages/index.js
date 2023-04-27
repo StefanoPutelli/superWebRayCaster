@@ -192,11 +192,11 @@ export default function Home() {
   useEffect(() => {
     setInterval(() => {
       if (!ctx.current || !canv.current) return;
-      const map2D = map.getFullMap(other_players);
+      const map2D_ = map.getFullMap(other_players);
       const map_size = map.getDimensions();
-      const result = player.rayCastInTheFov(map2D,map_size);
+      const result = player.rayCastInTheFov(map2D_,map_size);
       const resolution = player.getResolution();
-      player.move(keyPressed.current, configs.player_speed, map2D, map_size);
+      player.move(keyPressed.current, configs.player_speed, map2D_, map_size);
       checkTurn();
 
       screenRenderer.cleanCanvas(ctx.current, canv.current);
