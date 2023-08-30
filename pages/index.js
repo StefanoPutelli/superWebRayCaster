@@ -11,6 +11,8 @@ import useWebSocket from 'react-use-websocket';
 const WS_URL = "wss://stepo.cloud/ws";
 const FPS = 30;
 
+let lastFrameTimeMs = 0;
+
 const configs = {
   FOV: 60,
   initial_direction: -90,
@@ -19,7 +21,7 @@ const configs = {
     height: 600
   },
   tile_size: 1,
-  player_speed: 0.06
+  player_speed: 0.006
 }
 
 const map_text = (
@@ -191,12 +193,14 @@ export default function Home() {
 
   useEffect(() => {
     setInterval(() => {
+      const delta = Date.now() - lastFrameTimeMs;
+      lastFrameTimeMs = Date.now();
       if (!ctx.current || !canv.current) return;
       const map2D_ = map.getFullMap(other_players);
       const map_size = map.getDimensions();
       const result = player.rayCastInTheFov(map2D_,map_size);
       const resolution = player.getResolution();
-      player.move(keyPressed.current, configs.player_speed, map2D_, map_size);
+      player.move(keyPressed.current, configs.player_speed, map2D_, map_size, delta);
       checkTurn();
 
       screenRenderer.cleanCanvas(ctx.current, canv.current);

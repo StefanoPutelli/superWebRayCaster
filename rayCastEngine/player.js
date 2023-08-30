@@ -95,24 +95,24 @@ export default class Player {
         }
     }
 
-    move(key, player_speed, map2D, map_size) {
+    move(key, player_speed, map2D, map_size, time_from_last_frame) {
         let deltaX = 0;
         let deltaY = 0;
         if (key.w) {
-            deltaY += -player_speed * Math.sin(this.direction * M_PI / 180);
-            deltaX += player_speed * Math.cos(this.direction * M_PI / 180);
+            deltaY += -player_speed * Math.sin(this.direction * M_PI / 180) * time_from_last_frame;
+            deltaX += player_speed * Math.cos(this.direction * M_PI / 180) * time_from_last_frame;
         }
         if (key.s) {
-            deltaY += player_speed * Math.sin(this.direction * M_PI / 180);
-            deltaX += -player_speed * Math.cos(this.direction * M_PI / 180);
+            deltaY += player_speed * Math.sin(this.direction * M_PI / 180) * time_from_last_frame;
+            deltaX += -player_speed * Math.cos(this.direction * M_PI / 180) * time_from_last_frame;
         }
         if (key.a) {
-            deltaY += -player_speed * Math.cos(this.direction * M_PI / 180);
-            deltaX += -player_speed * Math.sin(this.direction * M_PI / 180);
+            deltaY += -player_speed * Math.cos(this.direction * M_PI / 180) * time_from_last_frame;
+            deltaX += -player_speed * Math.sin(this.direction * M_PI / 180) * time_from_last_frame;
         }
         if (key.d) {
-            deltaY += player_speed * Math.cos(this.direction * M_PI / 180);
-            deltaX += player_speed * Math.sin(this.direction * M_PI / 180);
+            deltaY += player_speed * Math.cos(this.direction * M_PI / 180) * time_from_last_frame;
+            deltaX += player_speed * Math.sin(this.direction * M_PI / 180) * time_from_last_frame;
         }
         if (deltaX !== 0 || deltaY !== 0) {
             let out_x = this.position.x + deltaX < 0 || this.position.x + deltaX >= map_size.width
